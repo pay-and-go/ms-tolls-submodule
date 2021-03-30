@@ -8,6 +8,8 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"github.com/joho/godotenv"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -226,10 +228,14 @@ func UpdateTollsInRouteEndpoint(response http.ResponseWriter, request *http.Requ
 // ***** End TollsInRoutes CRUD *****
 
 func main() {
+	loadEnv()
 	fmt.Println("Starting the application...")
 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+
+	user := os.Getenv("USER")
+	pass := os.Getenv("PASSWORD")
 	client, _ = mongo.Connect(ctx, options.Client().ApplyURI(
-         "mongodb+srv://administrator:administratorPayAndGo123@cluster0.blmmt.mongodb.net/TollSubmodule?retryWrites=true&w=majority",
+         "mongodb+srv://"+user+":"+pass+"@cluster0.blmmt.mongodb.net/TollSubmodule?retryWrites=true&w=majority",
       ))
     //if err != nil { log.Fatal(err) }
 
@@ -249,4 +255,11 @@ func main() {
 	router.HandleFunc("/updateTollsInRoute/{id}", UpdateTollsInRouteEndpoint).Methods("PUT")
 
 	http.ListenAndServe(":12345", router)
+}
+
+func loadEnv(){
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env")
+	}
 }
