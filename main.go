@@ -16,6 +16,7 @@ import (
 
 var client *mongo.Client
 
+// ***** Structures *****
 type Toll struct {
 	TollId           int     `json:"tollId" bson:"tollId"`
 	Administrator    string  `json:"administrator" bson:"administrator"`
@@ -28,7 +29,13 @@ type Toll struct {
 	Territory        string  `json:"territory" bson:"territory"`
 	TollPhoneNumber  string  `json:"toll_phone_number" bson:"toll_phone_number"`
 }
+type TollsInRoute struct {
+	Route int     `json:"route" bson:"route"`
+	Tolls []int   `json:"tolls" bson:"tolls"`
+}
+// ***** End Structures *****
 
+// ***** Tolls CRUD *****
 func CreateTollEndpoint(response http.ResponseWriter, request *http.Request) {
     response.Header().Set("content-type", "application/json")
     var toll Toll
@@ -38,7 +45,6 @@ func CreateTollEndpoint(response http.ResponseWriter, request *http.Request) {
     result, _ := collection.InsertOne(ctx, toll)
     json.NewEncoder(response).Encode(result)
 }
-
 func GetAllTollsEndpoint(response http.ResponseWriter, request *http.Request) {
 	response.Header().Set("content-type", "application/json")
 	var tolls []Toll
@@ -78,7 +84,6 @@ func GetTollEndpoint(response http.ResponseWriter, request *http.Request) {
 	}
 	json.NewEncoder(response).Encode(toll)
 }
-
 func DeleteTollEndpoint(response http.ResponseWriter, request *http.Request) {
 	response.Header().Set("content-type", "application/json")
 	params := mux.Vars(request)
@@ -93,7 +98,6 @@ func DeleteTollEndpoint(response http.ResponseWriter, request *http.Request) {
 	}
 	json.NewEncoder(response).Encode(result)
 }
-
 func UpdateTollEndpoint(response http.ResponseWriter, request *http.Request) {
 	response.Header().Set("content-type", "application/json")
 	params := mux.Vars(request)
@@ -128,6 +132,98 @@ func UpdateTollEndpoint(response http.ResponseWriter, request *http.Request) {
 
 	json.NewEncoder(response).Encode(result)
 }
+// ***** End Tolls CRUD *****
+
+// ***** TollsInRoutes CRUD *****
+func CreateTollsInRouteEndpoint(response http.ResponseWriter, request *http.Request) {
+	response.Header().Set("content-type", "application/json")
+	var tollsInRoute TollsInRoute
+	_ = json.NewDecoder(request.Body).Decode(&tollsInRoute)
+	collection := client.Database("TollSubmodule").Collection("TollsInRoutes")
+	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
+	result, _ := collection.InsertOne(ctx, tollsInRoute)
+	json.NewEncoder(response).Encode(result)
+}
+func GetAllTollsInRoutesEndpoint(response http.ResponseWriter, request *http.Request) {
+	response.Header().Set("content-type", "application/json")
+	var tollsInRoutes []TollsInRoute
+	collection := client.Database("TollSubmodule").Collection("TollsInRoutes")
+	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
+	cursor, err := collection.Find(ctx, bson.M{})
+	if err != nil {
+		response.WriteHeader(http.StatusInternalServerError)
+		response.Write([]byte(`{ "message": "` + err.Error() + `" }`))
+		return
+	}
+	defer cursor.Close(ctx)
+	for cursor.Next(ctx) {
+		var tollsInRoute TollsInRoute
+		cursor.Decode(&tollsInRoute)
+		tollsInRoutes = append(tollsInRoutes, tollsInRoute)
+	}
+	if err := cursor.Err(); err != nil {
+		response.WriteHeader(http.StatusInternalServerError)
+		response.Write([]byte(`{ "message": "` + err.Error() + `" }`))
+		return
+	}
+	json.NewEncoder(response).Encode(tollsInRoutes)
+}
+func GetTollsInARouteEndpoint(response http.ResponseWriter, request *http.Request) {
+	response.Header().Set("content-type", "application/json")
+	params := mux.Vars(request)
+	id, _ := strconv.Atoi(params["id"])
+	var tollsInRoute TollsInRoute
+	collection := client.Database("TollSubmodule").Collection("TollsInRoutes")
+	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
+	err := collection.FindOne(ctx, bson.M{"route": id}).Decode(&tollsInRoute)
+	if err != nil {
+		response.WriteHeader(http.StatusInternalServerError)
+		response.Write([]byte(`{ "message": "` + err.Error() + `" }`))
+		return
+	}
+	json.NewEncoder(response).Encode(tollsInRoute)
+}
+func DeleteTollsInRouteEndpoint(response http.ResponseWriter, request *http.Request) {
+	response.Header().Set("content-type", "application/json")
+	params := mux.Vars(request)
+	collection := client.Database("TollSubmodule").Collection("TollsInRoutes")
+	id, _ := strconv.Atoi(params["id"])
+	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+	result, err := collection.DeleteOne(ctx, bson.M{"route": id})
+	if err != nil {
+		response.WriteHeader(http.StatusInternalServerError)
+		response.Write([]byte(`{"message": "` + err.Error() + `" }`))
+		return
+	}
+	json.NewEncoder(response).Encode(result)
+}
+func UpdateTollsInRouteEndpoint(response http.ResponseWriter, request *http.Request) {
+	response.Header().Set("content-type", "application/json")
+	params := mux.Vars(request)
+	id, _ := strconv.Atoi(params["id"])
+	var tollsInRoute TollsInRoute
+	_ = json.NewDecoder(request.Body).Decode(&tollsInRoute)
+	collection := client.Database("TollSubmodule").Collection("TollsInRoutes")
+	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
+
+	//result, _ := collection.InsertOne(ctx, toll)
+	filter := bson.M{"route": bson.M{"$eq": id}}
+
+	update := bson.M{
+		"$set": bson.M{
+			"tolls": tollsInRoute.Tolls,
+		},
+	}
+	result, err := collection.UpdateOne(ctx, filter, update)
+
+	if err != nil {
+		fmt.Println("UpdateOne() result ERROR:", err)
+		os.Exit(1)
+	}
+
+	json.NewEncoder(response).Encode(result)
+}
+// ***** End TollsInRoutes CRUD *****
 
 func main() {
 	fmt.Println("Starting the application...")
@@ -138,10 +234,19 @@ func main() {
     //if err != nil { log.Fatal(err) }
 
 	router := mux.NewRouter()
+	// ***** 'Tolls' Routes *****
 	router.HandleFunc("/addToll", CreateTollEndpoint).Methods("POST")
 	router.HandleFunc("/getAllTolls", GetAllTollsEndpoint).Methods("GET")
 	router.HandleFunc("/getToll/{id}", GetTollEndpoint).Methods("GET")
 	router.HandleFunc("/deleteToll/{id}", DeleteTollEndpoint).Methods("DELETE")
 	router.HandleFunc("/updateToll/{id}", UpdateTollEndpoint).Methods("PUT")
+
+	// ***** 'TollsInRoutes' Routes *****
+	router.HandleFunc("/addTollsInRoute", CreateTollsInRouteEndpoint).Methods("POST")
+	router.HandleFunc("/getAllTollsInRoute", GetAllTollsInRoutesEndpoint).Methods("GET")
+	router.HandleFunc("/getTollInARoute/{id}", GetTollsInARouteEndpoint).Methods("GET")
+	router.HandleFunc("/deleteTollsInRoute/{id}", DeleteTollsInRouteEndpoint).Methods("DELETE")
+	router.HandleFunc("/updateTollsInRoute/{id}", UpdateTollsInRouteEndpoint).Methods("PUT")
+
 	http.ListenAndServe(":12345", router)
 }
