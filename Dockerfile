@@ -11,9 +11,11 @@ RUN go mod download
 COPY . .
 RUN go build main.go
 
-FROM scratch
-COPY --from=builder /go/src .
+FROM alpine:3 as certs
+RUN apk --no-cache add ca-certificates
 
-EXPOSE 12345
-#CMD ["./main"]
+FROM scratch as app
+COPY --from=builder /go/src ./
+COPY --from=certs /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+
 ENTRYPOINT ["./main"]
