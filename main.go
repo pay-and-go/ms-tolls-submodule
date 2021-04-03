@@ -258,7 +258,7 @@ func main() {
 	router.HandleFunc("/deleteTollsInRoute/{id}", DeleteTollsInRouteEndpoint).Methods("DELETE")
 	router.HandleFunc("/updateTollsInRoute/{id}", UpdateTollsInRouteEndpoint).Methods("PUT")
 
-	http.ListenAndServe(":12345", router)
+	http.ListenAndServe(":80", router)
 }
 
 func loadEnv(){
