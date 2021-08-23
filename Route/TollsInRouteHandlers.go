@@ -7,9 +7,9 @@ import (
 
 func addTollsInRouteHandlers(router *mux.Router) {
 	// ***** 'TollsInRoutes' Routes *****
-	router.HandleFunc("/addTollsInRoute", BusinessLogic.CreateTollsInRouteEndpoint).Methods("POST")
-	router.HandleFunc("/getAllTollsInRoute", BusinessLogic.GetAllTollsInRoutesEndpoint).Methods("GET")
-	router.HandleFunc("/getTollInARoute/{id}", BusinessLogic.GetTollsInARouteEndpoint).Methods("GET")
-	router.HandleFunc("/deleteTollsInRoute/{id}", BusinessLogic.DeleteTollsInRouteEndpoint).Methods("DELETE")
-	router.HandleFunc("/updateTollsInRoute/{id}", BusinessLogic.UpdateTollsInRouteEndpoint).Methods("PUT")
+	router.HandleFunc("/tolls-ms/addTollsInRoute", BusinessLogic.CreateTollsInRouteEndpoint).Methods("POST")
+	router.HandleFunc("/tolls-ms/getAllTollsInRoute", BusinessLogic.GetAllTollsInRoutesEndpoint).Methods("GET")
+	router.HandleFunc("/tolls-ms/getTollInARoute/{id}", BusinessLogic.GetTollsInARouteEndpoint).Methods("GET")
+	router.HandleFunc("/tolls-ms/deleteTollsInRoute/{id}", BusinessLogic.DeleteTollsInRouteEndpoint).Methods("DELETE")
+	router.HandleFunc("/tolls-ms/updateTollsInRoute/{id}", BusinessLogic.UpdateTollsInRouteEndpoint).Methods("PUT")
 }
